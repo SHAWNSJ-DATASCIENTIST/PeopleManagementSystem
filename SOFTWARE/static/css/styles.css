@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(180deg, #f3faf6 0%, #e9f4ed 100%);
+    color: #1a1a1a;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.camera-container {
+    margin-top: 15px;
+    background: black;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.camera-container img {
+    width: 100%;
+    height: auto;          /* FULL FRAME VISIBLE */
+    object-fit: contain;   /* DO NOT CROP */
+    display: block;
+}
+
+.status {
+    margin-top: 10px;
+}
+
+.stat-block {
+    margin-bottom: 20px;
+}
+
+.progress {
+    height: 12px;
+    background: #e6efe9;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 5px 0;
+}
+
+.fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #79dba7, #2f9e6f);
+    transition: width 0.3s ease;
+}
+
+.fill.green {
+    background: linear-gradient(90deg, #b4f2c2, #38c172);
+}
+
+.fill.danger {
+    background: linear-gradient(90deg, #ff9a9a, #ff4d4d);
+}
+
+.stat-value {
+    text-align: right;
+    font-weight: bold;
+}
+
+.sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.env-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.weights {
+    font-size: 12px;
+    color: #666;
+}
+
+@media (max-width: 900px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}

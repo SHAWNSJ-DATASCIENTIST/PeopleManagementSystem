@@ -1,0 +1,536 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Crowd Safety Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:white;
+}
+
+/* ===== NAV ===== */
+.nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:25px 60px;
+    background:rgba(0,0,0,0.5);
+    backdrop-filter:blur(20px);
+}
+
+.nav-links{
+    display:flex;
+    gap:30px;
+}
+
+.nav-btn{
+    background:rgba(255,255,255,0.12);
+    border:none;
+    padding:12px 26px;
+    border-radius:10px;
+    color:white;
+    cursor:pointer;
+    font-weight:500;
+    transition:0.25s;
+}
+
+.nav-btn.active{
+    background:#00e0ff;
+    color:black;
+}
+
+.tab-section{display:none;}
+.tab-section.active{display:block;}
+
+.container{
+    padding:60px;
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:60px;
+}
+
+.card{
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(20px);
+    border-radius:18px;
+    padding:40px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+
+.card h2{
+    margin-bottom:30px;
+}
+
+/* DASHBOARD */
+.progress{
+    background:rgba(255,255,255,0.15);
+    border-radius:20px;
+    height:12px;
+    margin-top:10px;
+    margin-bottom:15px;
+}
+
+.fill{
+    height:100%;
+    border-radius:20px;
+    background:#00e0ff;
+    width:0%;
+}
+
+.fill.green{background:#2ecc71;}
+.fill.red{background:#ff4b5c;}
+
+.stat-block{
+    margin-bottom:35px;
+}
+
+.sensor-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:18px;
+    margin-top:40px;
+}
+
+.sensor-box{
+    background:rgba(255,255,255,0.1);
+    padding:18px;
+    border-radius:12px;
+    text-align:center;
+}
+
+.env-grid{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+}
+
+.env-box{
+    background:rgba(255,255,255,0.1);
+    padding:18px;
+    border-radius:14px;
+}
+
+.people-count{
+    font-size:56px;
+    font-weight:700;
+    color:#00e0ff;
+    margin-top:20px;
+}
+
+/* small control tweaks in fuzzy card (non-invasive) */
+.fuzzy-controls { margin-bottom:18px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.fuzzy-controls label { font-size:14px; color:#ddd; margin-right:6px; }
+.fuzzy-readouts { margin-top:18px; color:#ddd; }
+.fuzzy-readouts b { color:#fff; display:inline-block; width:110px; }
+</style>
+</head>
+
+<body>
+
+<!-- ===== NAV ===== -->
+<div class="nav">
+    <div style="font-size:22px;font-weight:700;">CrowdSense AI</div>
+    <div class="nav-links">
+        <button class="nav-btn active" onclick="showTab('dashboard',this)">Dashboard</button>
+        <button class="nav-btn" onclick="showTab('fuzzy',this)">Fuzzy Engine</button>
+        <button class="nav-btn" onclick="showTab('ga',this)">GA Optimizer</button>
+    </div>
+</div>
+
+<!-- ================= DASHBOARD ================= -->
+<div id="dashboard" class="tab-section active">
+<div class="container">
+
+<div class="card">
+<h2>Live Camera Feed</h2>
+
+<img id="camera-img" src="/latest_image" style="width:100%;border-radius:16px;">
+
+<div style="margin-top:30px;">
+Vision – People Detected
+<div class="people-count" id="person-count">0</div>
+</div>
+
+<div style="margin-top:25px;">
+Visibility: <span id="vis-status">--</span> |
+Confidence: <span id="conf-percent">--%</span>
+</div>
+
+</div>
+
+<div class="card">
+<h2>Risk Analysis</h2>
+
+<div class="stat-block">
+Camera Risk
+<div class="progress"><div id="camera-risk-bar" class="fill"></div></div>
+<div id="camera-risk-val">0.00</div>
+</div>
+
+<div class="stat-block">
+Piezo Risk
+<div class="progress"><div id="piezo-risk-bar" class="fill green"></div></div>
+<div id="piezo-risk-val">0.00</div>
+</div>
+
+<div class="stat-block">
+Total Risk
+<div class="progress"><div id="total-risk-bar" class="fill red"></div></div>
+<div id="total-risk-val">0.00</div>
+</div>
+
+<div class="sensor-grid">
+<div class="sensor-box">P1 <span id="p1">0</span></div>
+<div class="sensor-box">P2 <span id="p2">0</span></div>
+<div class="sensor-box">P3 <span id="p3">0</span></div>
+<div class="sensor-box">P4 <span id="p4">0</span></div>
+<div class="sensor-box">P5 <span id="p5">0</span></div>
+</div>
+
+<div class="env-grid">
+<div class="env-box">Distance: <span id="env-distance">--</span></div>
+<div class="env-box">Vibration: <span id="env-vib">--</span></div>
+<div class="env-box">IR: <span id="env-ir">--</span></div>
+<div class="env-box">PIR: <span id="env-pir">--</span></div>
+</div>
+
+<div style="margin-top:40px;">
+Dynamic Weights → Cam: <span id="w-cam">0.6</span> |
+Piezo: <span id="w-piezo">0.4</span>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ================= FUZZY ================= -->
+<div id="fuzzy" class="tab-section">
+<div class="container">
+
+<div class="card">
+<h2>Adaptive Neuro-Fuzzy Engine</h2>
+
+Vision Confidence
+<input type="range" id="vc" min="0" max="1" step="0.01" value="0.8"><br><br>
+
+Sensor Intensity
+<input type="range" id="si" min="0" max="1" step="0.01" value="0.4"><br><br>
+
+Chaos Score
+<input type="range" id="cs" min="0" max="1" step="0.01" value="0.3"><br><br>
+
+<button onclick="runFuzzy()">Compute Adaptive Risk</button>
+
+<h3>Adaptive Weights</h3>
+Camera Weight: <span id="fw_cam">--</span><br>
+Sensor Weight: <span id="fw_sensor">--</span>
+
+<h3>Final Risk</h3>
+<span id="fuzzyRisk">--</span>
+</div>
+
+<div class="card">
+<h2>Membership Functions</h2>
+
+<!-- NEW: small non-invasive controls inside fuzzy card only -->
+<div class="fuzzy-controls">
+    <label for="mfVar">Plot variable:</label>
+    <select id="mfVar" title="Choose variable to visualize">
+        <option value="density" selected>Density (people)</option>
+        <option value="chaos">Chaos Score</option>
+        <option value="sensor">Sensor Intensity</option>
+    </select>
+
+    <label for="maxPeople">Normalize max people:</label>
+    <input id="maxPeople" type="number" min="1" value="100" style="width:80px" title="Used to normalize person_count → density (0-1)">
+
+    <button id="refreshMF" style="margin-left:8px">Refresh Plot</button>
+</div>
+
+<canvas id="mfChart" width="600" height="300"></canvas>
+
+<div class="fuzzy-readouts" id="mfReadouts">
+    <div><b>Variable value:</b> <span id="mfValue">--</span></div>
+    <div><b>Low:</b> <span id="mfLow">--</span></div>
+    <div><b>Medium:</b> <span id="mfMed">--</span></div>
+    <div><b>High:</b> <span id="mfHigh">--</span></div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<!-- ================= GA ================= -->
+<div id="ga" class="tab-section">
+<div style="height:70vh;display:flex;justify-content:center;align-items:center;font-size:26px;">
+🚧 Genetic Algorithm Module – Currently Out of Service
+</div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+// ---------- keep original showTab (no changes elsewhere) ----------
+function showTab(id,btn){
+    document.querySelectorAll('.tab-section').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(btn) btn.classList.add('active');
+}
+
+// ---------- TRIANGLE MF ----------
+function triangle(x,a,b,c){
+    // robust triangle - handles degenerate edges
+    if (b === a && c === b) return x === a ? 1 : 0;
+    if (x <= a || x >= c) return 0;
+    if (x <= b) return (x - a) / (b - a);
+    return (c - x) / (c - b);
+}
+
+// ---------- LABELS ----------
+const labels = Array.from({length:101},(_,i)=>i/100);
+
+// ---------- MF CHART INIT (single variable view with activation marker) ----------
+let mfChart;
+function initMembershipChart(){
+    const ctx = document.getElementById('mfChart').getContext('2d');
+
+    mfChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Low', data: labels.map(x=>triangle(x,0,0,0.4)), borderColor: '#00e0ff', borderWidth: 2, pointRadius: 0, fill: false },
+                { label: 'Medium', data: labels.map(x=>triangle(x,0.3,0.5,0.7)), borderColor: '#f1c40f', borderWidth: 2, pointRadius: 0, fill: false },
+                { label: 'High', data: labels.map(x=>triangle(x,0.6,1,1)), borderColor: '#ff4b5c', borderWidth: 2, pointRadius: 0, fill: false },
+                // activation marker (single point, updated dynamically)
+                { label: 'Activation', data: Array(labels.length).fill(null), borderColor: '#ffffff', backgroundColor: '#ffffff', pointRadius: 6, showLine: false }
+            ]
+        },
+        options: {
+            animation: false,
+            scales: {
+                x: {
+                    type: 'category',
+                    ticks: {
+                        callback: function(value, index) {
+                            // show fewer labels
+                            if (index % 10 === 0) return labels[index].toFixed(2);
+                            return '';
+                        }
+                    }
+                },
+                y: { min: 0, max: 1 }
+            },
+            plugins: {
+                legend: { labels: { usePointStyle: true } }
+            }
+        }
+    });
+}
+
+// initialize chart before dashboard updates
+initMembershipChart();
+
+// ---------- Utility: read chaos robustly from API object ----------
+function readChaosFromData(data){
+    // try multiple likely keys; fallback to undefined
+    const candidates = [
+        data?.camera?.chaos,
+        data?.camera?.chaos_score,
+        data?.camera?.chaosScore,
+        data?.fusion?.chaos,
+        data?.fusion?.chaos_score,
+        data?.fusion?.chaosScore
+    ];
+    for (let c of candidates){
+        if (typeof c === 'number') return parseFloat(c);
+    }
+    return undefined;
+}
+
+// ---------- Update Chart curves depending on variable type ----------
+function setMFShapeForVariable(variable){
+    // variable: 'density' | 'chaos' | 'sensor'
+    // set dataset shapes appropriate to that input's semantics
+    if (!mfChart) return;
+
+    if (variable === 'density'){
+        // density: low up to ~0.4, med around 0.3-0.7, high from 0.6
+        mfChart.data.datasets[0].data = labels.map(x=>triangle(x,0,0,0.4));
+        mfChart.data.datasets[1].data = labels.map(x=>triangle(x,0.3,0.5,0.7));
+        mfChart.data.datasets[2].data = labels.map(x=>triangle(x,0.6,1,1));
+    } else if (variable === 'chaos'){
+        // chaos: low near 0, medium around 0.25-0.75, high near 1 (more tolerant medium)
+        mfChart.data.datasets[0].data = labels.map(x=>triangle(x,0,0,0.25));
+        mfChart.data.datasets[1].data = labels.map(x=>triangle(x,0.2,0.5,0.8));
+        mfChart.data.datasets[2].data = labels.map(x=>triangle(x,0.6,1,1));
+    } else if (variable === 'sensor'){
+        // sensor intensity: low small vibrations up to 0.3, med around 0.2-0.7, high aggressive 0.6-1
+        mfChart.data.datasets[0].data = labels.map(x=>triangle(x,0,0,0.3));
+        mfChart.data.datasets[1].data = labels.map(x=>triangle(x,0.25,0.5,0.75));
+        mfChart.data.datasets[2].data = labels.map(x=>triangle(x,0.6,1,1));
+    }
+    mfChart.update('none');
+}
+
+// call once to set default (density)
+setMFShapeForVariable(document.getElementById('mfVar').value);
+
+// ---------- Hook the refresh button and selector ----------
+document.getElementById('refreshMF').addEventListener('click', ()=>{
+    setMFShapeForVariable(document.getElementById('mfVar').value);
+});
+
+// If user changes select, instantly update curves
+document.getElementById('mfVar').addEventListener('change', (e)=>{
+    setMFShapeForVariable(e.target.value);
+});
+
+// ---------- DASHBOARD LIVE UPDATE (unchanged behavior except now MF uses live inputs) ----------
+async function updateDashboard(){
+    try{
+        const res = await fetch('/api/fusion_stats');
+        if(!res.ok) throw new Error('bad response');
+        const data = await res.json();
+
+        // read primary values (robustly)
+        const person_count = (data?.camera?.person_count !== undefined) ? Number(data.camera.person_count) : NaN;
+        const vc = (data?.camera?.confidence !== undefined) ? parseFloat(data.camera.confidence) : NaN;
+        // sensor intensity default path
+        const si = (data?.piezo?.risk !== undefined) ? parseFloat(data.piezo.risk) : 
+                   (data?.piezo?.intensity !== undefined ? parseFloat(data.piezo.intensity) : NaN);
+
+        // chaos attempts
+        let chaosVal = readChaosFromData(data); // may be undefined
+        // fallback: if chaosVal undefined try a computed chaos from motion variance or camera.confidence inversion
+        if (chaosVal === undefined) {
+            // try piezo.raw_data.V as proxy for chaos if present
+            if (typeof data?.piezo?.raw_data?.V === 'number') chaosVal = Number(data.piezo.raw_data.V);
+            // otherwise if vc exists use 1-vc as a weak proxy (not ideal but fallback)
+            else if (!isNaN(vc)) chaosVal = Math.max(0, Math.min(1, 1 - vc));
+        }
+
+        // update existing dashboard fields (unchanged semantics)
+        if (data?.camera) {
+            document.getElementById('person-count').innerText = isNaN(person_count) ? 0 : person_count;
+            document.getElementById('vis-status').innerText = data.camera.status ?? '--';
+            document.getElementById('conf-percent').innerText = isNaN(vc) ? '--%' : Math.round(vc * 100) + '%';
+        }
+        if (data?.camera?.risk !== undefined) document.getElementById('camera-risk-val').innerText = Number(data.camera.risk).toFixed(2);
+        if (data?.piezo?.risk !== undefined) document.getElementById('piezo-risk-val').innerText = Number(data.piezo.risk).toFixed(2);
+        if (data?.fusion?.total_risk !== undefined) document.getElementById('total-risk-val').innerText = Number(data.fusion.total_risk).toFixed(2);
+
+        if (data?.camera?.risk !== undefined) document.getElementById('camera-risk-bar').style.width = (Number(data.camera.risk) * 100) + '%';
+        if (data?.piezo?.risk !== undefined) document.getElementById('piezo-risk-bar').style.width = (Number(data.piezo.risk) * 100) + '%';
+        if (data?.fusion?.total_risk !== undefined) document.getElementById('total-risk-bar').style.width = (Number(data.fusion.total_risk) * 100) + '%';
+
+        if (data?.fusion?.weights) {
+            document.getElementById('w-cam').innerText = data.fusion.weights.cam ?? document.getElementById('w-cam').innerText;
+            document.getElementById('w-piezo').innerText = data.fusion.weights.piezo ?? document.getElementById('w-piezo').innerText;
+        }
+
+        if (data?.piezo?.raw_data){
+            document.getElementById('p1').innerText = data.piezo.raw_data.P1 ?? 0;
+            document.getElementById('p2').innerText = data.piezo.raw_data.P2 ?? 0;
+            document.getElementById('p3').innerText = data.piezo.raw_data.P3 ?? 0;
+            document.getElementById('p4').innerText = data.piezo.raw_data.P4 ?? 0;
+            document.getElementById('p5').innerText = data.piezo.raw_data.P5 ?? 0;
+            document.getElementById('env-distance').innerText = (data.piezo.raw_data.D ?? "--") + " cm";
+            document.getElementById('env-vib').innerText = data.piezo.raw_data.V ?? "--";
+            document.getElementById('env-ir').innerText = data.piezo.raw_data.IR ?? "--";
+            document.getElementById('env-pir').innerText = data.piezo.raw_data.PIR ?? "--";
+        }
+
+        // ----------- Compute the variable to plot (density / chaos / sensor) -----------
+        const chosen = document.getElementById('mfVar').value; // density | chaos | sensor
+        const maxPeople = Math.max(1, Number(document.getElementById('maxPeople').value) || 100);
+
+        let plotValue = 0; // normalized 0-1
+        if (chosen === 'density') {
+            // density: normalize person_count by maxPeople
+            plotValue = isNaN(person_count) ? 0 : Math.max(0, Math.min(1, person_count / maxPeople));
+        } else if (chosen === 'chaos') {
+            plotValue = (typeof chaosVal === 'number' && !isNaN(chaosVal)) ? Math.max(0, Math.min(1, chaosVal)) : 0;
+        } else if (chosen === 'sensor') {
+            plotValue = (typeof si === 'number' && !isNaN(si)) ? Math.max(0, Math.min(1, si)) : 0;
+        }
+
+        // ---------- compute memberships for the selected variable using current chart triangles ----------
+        // Determine which triangle parameters were used for the current variable by sampling chart points:
+        // We'll recompute using same param sets used in setMFShapeForVariable
+        let lowVal = 0, medVal = 0, highVal = 0;
+        if (chosen === 'density'){
+            lowVal = triangle(plotValue, 0, 0, 0.4);
+            medVal = triangle(plotValue, 0.3, 0.5, 0.7);
+            highVal = triangle(plotValue, 0.6, 1, 1);
+        } else if (chosen === 'chaos'){
+            lowVal = triangle(plotValue, 0, 0, 0.25);
+            medVal = triangle(plotValue, 0.2, 0.5, 0.8);
+            highVal = triangle(plotValue, 0.6, 1, 1);
+        } else { // sensor
+            lowVal = triangle(plotValue, 0, 0, 0.3);
+            medVal = triangle(plotValue, 0.25, 0.5, 0.75);
+            highVal = triangle(plotValue, 0.6, 1, 1);
+        }
+
+        // update readouts
+        document.getElementById('mfValue').innerText = plotValue.toFixed(3);
+        document.getElementById('mfLow').innerText = lowVal.toFixed(3);
+        document.getElementById('mfMed').innerText = medVal.toFixed(3);
+        document.getElementById('mfHigh').innerText = highVal.toFixed(3);
+
+        // ---------- Place activation marker at nearest index ----------
+        const idx = Math.round(plotValue * 100);
+        const actArr = Array(labels.length).fill(null);
+        actArr[idx] = Math.max(lowVal, medVal, highVal);
+
+        if (mfChart && mfChart.data && mfChart.data.datasets && mfChart.data.datasets.length >= 4){
+            // ensure curves match selection (keeps plot relevant)
+            setMFShapeForVariable(chosen);
+
+            mfChart.data.datasets[3].data = actArr;
+            mfChart.update('none');
+        }
+
+    }catch(err){
+        console.error("updateDashboard() error:", err);
+    }
+}
+
+// start updates after chart inited
+setInterval(updateDashboard, 1000);
+updateDashboard();
+
+// ---------- existing runFuzzy preserved (no change to original algorithm) ----------
+function runFuzzy(){
+    let vc=parseFloat(document.getElementById('vc').value);
+    let si=parseFloat(document.getElementById('si').value);
+    let cs=parseFloat(document.getElementById('cs').value);
+
+    let camWeight = vc*(1-cs);
+    let sensorWeight = si*(cs+0.5);
+    let sum = camWeight+sensorWeight || 1;
+    camWeight/=sum;
+    sensorWeight/=sum;
+
+    let risk=(camWeight*vc)+(sensorWeight*si);
+
+    document.getElementById('fw_cam').innerText=camWeight.toFixed(2);
+    document.getElementById('fw_sensor').innerText=sensorWeight.toFixed(2);
+    document.getElementById('fuzzyRisk').innerText=risk.toFixed(2);
+}
+</script>
+
+</body>
+</html>
