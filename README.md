@@ -1,7 +1,3 @@
-<img width="1200" height="1600" alt="WhatsApp Image 2026-04-16 at 12 57 53 AM" src="https://github.com/user-attachments/assets/31e1245c-b0cb-4d9d-b529-58778531c1c1" />
-
-
-
 # PeopleManagementSystem
 
 This project implements a hybrid soft computing framework combining deep learning and evolutionary optimization for intelligent crowd risk assessment. The system leverages CNN for spatial density classification, YOLO for object detection, fuzzy inference for uncertainty modeling, and genetic algorithms for rule optimization.
@@ -114,7 +110,7 @@ Public events monitoring
 
 Stadium crowd control
 
-Religious gatherings
+<img width="1200" height="1600" alt="WhatsApp Image 2026-04-16 at 12 57 53 AM" src="https://github.com/user-attachments/assets/31e1245c-b0cb-4d9d-b529-58778531c1c1" />
 
 Railway stations
 
